@@ -20,89 +20,17 @@ jobs:
       GETTEXT_BIN: C:\msys64\usr\bin
 
     steps:
-      - name: Checkout without submodules first
+      - name: Checkout with submodules
         uses: actions/checkout@v4
         with:
-          submodules: false
-
-      - name: Vendor OpenCPN libs
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          Write-Host "Initial opencpn-libs state:"
-          if (Test-Path "opencpn-libs") {
-            Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
-          } else {
-            Write-Host "opencpn-libs does not exist yet."
-          }
-
-          Remove-Item "opencpn-libs" -Recurse -Force -ErrorAction SilentlyContinue
-
-          $urls = @(
-            "https://github.com/OpenCPN/opencpn-libs.git",
-            "https://github.com/jongough/opencpn-libs.git",
-            "https://github.com/Rasbats/opencpn-libs.git"
-          )
-
-          $ok = $false
-
-          foreach ($url in $urls) {
-            Write-Host "Trying opencpn-libs source: $url"
-
-            Remove-Item "opencpn-libs" -Recurse -Force -ErrorAction SilentlyContinue
-
-            git clone --depth 1 $url opencpn-libs
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "Clone failed: $url"
-              continue
-            }
-
-            $required = @(
-              "opencpn-libs/WindowsHeaders",
-              "opencpn-libs/api-18",
-              "opencpn-libs/tinyxml",
-              "opencpn-libs/odapi",
-              "opencpn-libs/jsonlib",
-              "opencpn-libs/wxJSON",
-              "opencpn-libs/plugin_dc"
-            )
-
-            $missing = @()
-            foreach ($path in $required) {
-              if (-not (Test-Path $path)) {
-                $missing += $path
-              }
-            }
-
-            if ($missing.Count -eq 0) {
-              Write-Host "OpenCPN libs OK from: $url"
-              $ok = $true
-              break
-            }
-
-            Write-Host "Source did not contain all required paths:"
-            $missing | ForEach-Object { Write-Host "  missing: $_" }
-
-            Write-Host "Top-level opencpn-libs contents:"
-            Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
-          }
-
-          if (-not $ok) {
-            Write-Host "Final repository root:"
-            Get-ChildItem -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
-            throw "Could not vendor required OpenCPN libs."
-          }
-
-          Write-Host "Final opencpn-libs contents:"
-          Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
+          submodules: recursive
 
       - name: Show repository state
         shell: pwsh
         run: |
           git status
           Get-ChildItem
-          Get-ChildItem opencpn-libs
+          Get-ChildItem .github\workflows
 
       - name: Install helper tools
         shell: pwsh
@@ -186,7 +114,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse build -ErrorAction SilentlyContinue | Select-Object FullName, Length | Out-String -Width 240
+          Get-ChildItem -Recurse build | Select-Object FullName, Length | Out-String -Width 240
 
       - name: Upload build artifacts
         if: always()
