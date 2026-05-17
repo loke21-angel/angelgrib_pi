@@ -1,0 +1,68 @@
+name: AngelGRIB smoke test
+
+on:
+  push:
+    branches:
+      - main
+      - template-migration
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    name: Smoke test project structure and GRIB download
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show repository root
+        shell: pwsh
+        run: |
+          Get-Location
+          Get-ChildItem
+
+      - name: Check required files
+        shell: pwsh
+        run: |
+          $required = @(
+            "README.md",
+            "src/angelgrib_pi.cpp",
+            "src/grib_url_builder.cpp",
+            "include/angelgrib_pi.h",
+            "include/grib_url_builder.h",
+            "scripts/download-noaa-gfs-sample.ps1"
+          )
+
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) {
+              throw "Missing required file: $file"
+            }
+            Write-Host "OK: $file"
+          }
+
+      - name: Run GRIB download sample
+        shell: pwsh
+        run: |
+          ./scripts/download-noaa-gfs-sample.ps1
+
+          $file = "scripts/out/angel_gfs_latest.grb2"
+          if (-not (Test-Path $file)) {
+            throw "GRIB file was not created"
+          }
+
+          $size = (Get-Item $file).Length
+          Write-Host "GRIB file size: $size bytes"
+
+          if ($size -le 0) {
+            throw "GRIB file is empty"
+          }
+
+      - name: Upload downloaded GRIB sample
+        uses: actions/upload-artifact@v4
+        with:
+          name: angelgrib-sample-grib
+          path: scripts/out/angel_gfs_latest.grb2
