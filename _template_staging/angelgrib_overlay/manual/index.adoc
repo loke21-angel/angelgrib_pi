@@ -1,0 +1,23 @@
+= AngelGRIB
+
+AngelGRIB downloads a small NOAA GFS GRIB2 file and opens it in OpenCPN's GRIB Weather plugin.
+
+== First version
+
+The first MVP uses a fixed forecast area around Denmark/North Sea and downloads:
+
+* 10 m wind U/V
+* wind gusts
+* mean sea level pressure
+* precipitation
+
+== Usage
+
+. Enable the GRIB Weather plugin in OpenCPN.
+. Enable AngelGRIB.
+. Click *Download GRIB*.
+. Wait for the GRIB overlay to open in the GRIB plugin.
+
+== Limitations
+
+The first version uses a fixed area and fixed forecast time.

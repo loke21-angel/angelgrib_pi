@@ -1,0 +1,22 @@
+﻿AngelGRIB Testplugin staging report
+===================================
+
+RepoRoot:
+C:\Users\Administrator\Downloads\angelgrib_pi
+
+Branch:
+template-migration
+
+Template staged at:
+C:\Users\Administrator\Downloads\angelgrib_pi\_template_staging\testplugin_pi
+
+AngelGRIB overlay staged at:
+C:\Users\Administrator\Downloads\angelgrib_pi\_template_staging\angelgrib_overlay
+
+Apply mode:
+False
+
+Notes:
+- This script intentionally stages first.
+- The testplugin template is copied from jongough/testplugin_pi.
+- After Apply, expect manual CMake/Plugin.cmake integration work.
