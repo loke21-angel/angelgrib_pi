@@ -1,20 +1,23 @@
-# AngelGRIB_pi v0.9.3 — OpenCPN libs vendor fix
+# AngelGRIB_pi v0.9.4 — Tarball metadata fix
 
-Buildet er nu korrekt omdøbt til AngelGRIB og Gettext virker. Den aktuelle fejl er kun, at template-CMake forventer mapper under `opencpn-libs/`, men de findes ikke i GitHub Actions-runneren.
+OpenCPN accepterer ikke den byggede `.tar.gz`, fordi tarballen mangler den påkrævede metadatafil inde i selve arkivet.
 
-Denne patch gør workflowet mere robust:
+Fejlen i OpenCPN:
 
-1. Sletter en tom/ufuldstændig `opencpn-libs` mappe.
-2. Henter OpenCPN libs fra flere mulige GitHub-repo URLs.
-3. Verificerer at disse mapper findes:
-   - `WindowsHeaders`
-   - `api-18`
-   - `tinyxml`
-   - `odapi`
-   - `jsonlib`
-   - `wxJSON`
-   - `plugin_dc`
-4. Fejler tidligt med tydelig directory-listing hvis de stadig mangler.
+```text
+Error, import plugin tarball does not contain required metadata.
+```
+
+Artifacten indeholder allerede en `.xml` ved siden af `.tar.gz`, men OpenCPN Import Plugin Tarball kræver metadata inde i tarballen.
+
+Denne patch tilføjer et GitHub Actions step efter `Build package`, som:
+
+1. Finder `build/*.tar.gz`
+2. Finder den byggede `build/*.xml`
+3. Pakker tarballen ud
+4. Kopierer XML-filen ind som `metadata.xml`
+5. Pakker tarballen igen
+6. Uploader den rettede tarball som artifact
 
 ## Brug
 
@@ -22,10 +25,10 @@ Denne patch gør workflowet mere robust:
 cd C:\Users\Administrator\Downloads\angelgrib_pi
 git checkout template-migration
 
-.\scripts\patch-opencpn-libs-vendor-v093.ps1
+.\scripts\patch-tarball-metadata-v094.ps1
 
 git status
 git add .
-git commit -m "Fix OpenCPN libs vendor fallback in Windows workflow"
+git commit -m "Include metadata.xml inside plugin tarball"
 git push
 ```
