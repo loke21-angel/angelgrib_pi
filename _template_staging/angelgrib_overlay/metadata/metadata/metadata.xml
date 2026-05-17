@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <name>AngelGRIB</name>
+  <version>0.1.0</version>
+  <api-version>1.17</api-version>
+  <summary>Download NOAA GFS GRIB files and open them in OpenCPN GRIB plugin</summary>
+  <description>
+    AngelGRIB adds a toolbar button to download a small NOAA GFS GRIB2 file and pass it to OpenCPN's GRIB Weather plugin.
+  </description>
+  <author>Rasmus Jessen</author>
+</plugin>

@@ -14,7 +14,7 @@ AngelGRIB overlay staged at:
 C:\Users\Administrator\Downloads\angelgrib_pi\_template_staging\angelgrib_overlay
 
 Apply mode:
-True
+False
 
 Notes:
 - This script intentionally stages first.
