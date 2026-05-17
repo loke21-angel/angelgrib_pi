@@ -1,7 +1,12 @@
-# GitHub Actions note
+# GitHub Actions
 
-This package intentionally does not include a fake full build workflow.
+This folder intentionally contains documentation, not a fake CI workflow.
 
-Use the OpenCPN ShipDriver/plugin-template workflow as the base. The CI configuration should come from the template, not from this MVP package.
+The actual build workflow should come from the OpenCPN ShipDriver/Testplugin template.
 
-Reason: OpenCPN plugin builds depend on template-managed platform build files, tarball generation, metadata, checksums and deployment details.
+Why:
+- OpenCPN plugin CI needs platform-specific builders
+- Tarball generation and metadata are template-managed
+- Recreating it here caused wxWidgets/API/linking problems
+
+After importing a real template, replace this README with the template's workflow files.

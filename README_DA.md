@@ -1,48 +1,38 @@
-# AngelGRIB_pi v0.5.0 — template-integration MVP
+# AngelGRIB_pi v0.6.0 — Template Migration Kit
 
-Dette er en ren, struktureret projektpakke til næste skridt: at flytte AngelGRIB-koden ind i et rigtigt OpenCPN ShipDriver/plugin-template workflow.
+Denne pakke er næste strukturerede trin efter MVP-repoet.
 
-**Vigtigt:** Dette er ikke længere et selvstændigt Windows buildprojekt. Den gamle lokale build-strategi med vcpkg/wxWidgets/API-hacks er bevidst droppet.
+Målet er at gøre `https://github.com/loke21-angel/angelgrib_pi` klar til at blive migreret ind i OpenCPN's plugin-template/ShipDriver workflow uden at gentage den gamle lokale Windows build-sump.
 
-## Målet for første version
+## Hvad denne pakke er
 
-**AngelGRIB Downloader v0.1**
+En migreringspakke med:
+- konkret checklist
+- template-adapterfiler
+- foreslået README til repoets forside
+- GitHub Actions placeholder med forklaring
+- issue templates
+- release checklist
+- forbedret testscript
 
-Én knap i OpenCPN:
+## Hvad denne pakke ikke er
 
-1. Henter NOAA GFS 0.25° GRIB2 for et fast område.
-2. Gemmer filen som `angel_gfs_latest.grb2`.
-3. Sender filen til OpenCPN's eksisterende GRIB Weather-plugin.
-4. Viser en simpel fejlbesked ved downloadfejl.
+Den er ikke en færdig OpenCPN tarball-builder. Selve build-/tarball-flowet skal komme fra OpenCPN ShipDriver/testplugin-template, ikke fra vores egne scripts.
 
-## Det vi allerede har bevist
+## Anbefalet brug
 
-PowerShell-testen virker:
+1. Pak denne zip ud.
+2. Kopiér indholdet ind i dit repo `angelgrib_pi`.
+3. Commit som `Prepare template migration`.
+4. Brug derefter ShipDriver/testplugin-template som base eller merge template-filer ind.
+5. Lad CI bygge Plugin Manager-tarball.
 
-```powershell
-cd scripts
-.\download-noaa-gfs-sample.ps1
-```
+## Første release-mål
 
-og OpenCPN GRIB-plugin'et kan åbne filen manuelt.
+`v0.1.0-beta`
 
-## Anbefalet næste vej
-
-1. Opret et GitHub repo: `angelgrib_pi`.
-2. Start fra et eksisterende OpenCPN/ShipDriver-template plugin.
-3. Kopiér filerne fra denne pakke ind i template-repoet.
-4. Tilpas `Plugin.cmake`.
-5. Lad GitHub Actions bygge Windows tarball.
-6. Importér tarball i OpenCPN via:
-   `Options → Plugins → Import Plugin Tarball`.
-
-## Hvorfor denne retning?
-
-OpenCPN's ShipDriver-template håndterer:
-- tarballs til Plugin Installer
-- metadata og checksums
-- CI-builds
-- Cloudsmith/download-URL flow
-- platformsspecifikke builddetaljer
-
-Det er præcis den del, vi ikke skal genopfinde.
+Funktion:
+- toolbar-knap
+- download fast NOAA GFS GRIB2
+- gem fil
+- åbn i OpenCPN GRIB Weather-plugin
