@@ -1,4 +1,4 @@
-﻿name: AngelGRIB Windows build experiment
+name: AngelGRIB Windows build experiment
 
 on:
   push:
@@ -17,7 +17,6 @@ jobs:
       wxWidgets_ROOT_DIR: C:\wxWidgets-3.2.1
       wxWidgets_LIB_DIR: C:\wxWidgets-3.2.1\lib\vc_dll
       OCPN_TARGET: MSVC
-      GETTEXT_BIN: C:\msys64\usr\bin
 
     steps:
       - name: Checkout with submodules
@@ -35,33 +34,7 @@ jobs:
       - name: Install helper tools
         shell: pwsh
         run: |
-          choco install wget 7zip nsis -y --no-progress
-
-      - name: Install Gettext using MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: gettext
-
-      - name: Verify Gettext tools
-        shell: pwsh
-        run: |
-          $msgmerge = "C:\msys64\usr\bin\msgmerge.exe"
-          $msgfmt = "C:\msys64\usr\bin\msgfmt.exe"
-
-          if (-not (Test-Path $msgmerge)) {
-            throw "msgmerge.exe not found at $msgmerge"
-          }
-
-          if (-not (Test-Path $msgfmt)) {
-            throw "msgfmt.exe not found at $msgfmt"
-          }
-
-          Write-Host "msgmerge: $msgmerge"
-          Write-Host "msgfmt:   $msgfmt"
-
-          "$env:GETTEXT_BIN" | Out-File -FilePath $env:GITHUB_PATH -Append
+          choco install wget 7zip nsis poedit -y --no-progress
 
       - name: Download wxWidgets 3.2.1 MSVC dev files
         shell: pwsh
@@ -98,16 +71,14 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
-          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\msys64\usr\bin
-          cmake -S . -B build -A Win32 ^
-            -DGETTEXT_MSGMERGE_EXECUTABLE=C:/msys64/usr/bin/msgmerge.exe ^
-            -DGETTEXT_MSGFMT_EXECUTABLE=C:/msys64/usr/bin/msgfmt.exe
+          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\Program Files (x86)\Poedit\GettextTools\bin
+          cmake -S . -B build -A Win32
 
       - name: Build package
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
-          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\msys64\usr\bin
+          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\Program Files (x86)\Poedit\GettextTools\bin
           cmake --build build --target package --config Release --verbose
 
       - name: List build output

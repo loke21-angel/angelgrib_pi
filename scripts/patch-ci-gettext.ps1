@@ -1,4 +1,28 @@
-﻿name: AngelGRIB Windows build experiment
+$ErrorActionPreference = "Stop"
+
+$repo = Resolve-Path "."
+if (-not (Test-Path (Join-Path $repo ".git"))) {
+    throw "Run this from the repository root."
+}
+
+$branch = (& git rev-parse --abbrev-ref HEAD).Trim()
+if ($branch -ne "template-migration") {
+    throw "Expected branch template-migration, got $branch"
+}
+
+$workflow = Join-Path $repo ".github\workflows\windows-build-experiment.yml"
+if (-not (Test-Path $workflow)) {
+    throw "Workflow not found: $workflow"
+}
+
+$backup = Join-Path $repo ".github\workflows\windows-build-experiment.yml.before-v091"
+if (-not (Test-Path $backup)) {
+    Copy-Item $workflow $backup
+    Write-Host "Backup created: $backup"
+}
+
+$newWorkflow = @'
+name: AngelGRIB Windows build experiment
 
 on:
   push:
@@ -127,3 +151,14 @@ jobs:
             build/**/*.exe
             build/**/*.xml
             build/**/*.log
+'@
+
+Set-Content -Path $workflow -Value $newWorkflow -Encoding UTF8
+
+Write-Host "Patched workflow: $workflow"
+Write-Host ""
+Write-Host "Next:"
+Write-Host "  git diff -- .github/workflows/windows-build-experiment.yml"
+Write-Host "  git add ."
+Write-Host "  git commit -m ""Fix Gettext tools in Windows build workflow"""
+Write-Host "  git push"
