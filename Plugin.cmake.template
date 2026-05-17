@@ -1,0 +1,24 @@
+# Plugin.cmake.template for AngelGRIB_pi
+#
+# This file is meant to be adapted inside an OpenCPN ShipDriver/plugin-template repository.
+# It is not intended to be used as a standalone CMake file.
+
+set(PKG_NAME angelgrib_pi)
+set(PKG_VERSION 0.1.0)
+set(PKG_PRERELEASE beta)
+
+set(PKG_SUMMARY "Download NOAA GFS GRIB files and open them in OpenCPN GRIB plugin")
+set(PKG_DESCRIPTION "AngelGRIB adds a toolbar button to download a small NOAA GFS GRIB2 file and pass it to OpenCPN's built-in GRIB Weather plugin.")
+
+set(SRC
+    src/angelgrib_pi.cpp
+    src/grib_url_builder.cpp
+)
+
+set(HDR
+    include/angelgrib_pi.h
+    include/grib_url_builder.h
+)
+
+# In the actual template repo, add SRC/HDR according to the template's expected variables.
+# Do not reintroduce local vcpkg/OpenCPN API bootstrapping here.
