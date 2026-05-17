@@ -1,28 +1,19 @@
-# AngelGRIB_pi v0.9.5 — dual metadata tarball fix
+# AngelGRIB_pi v0.9.6 — Python tar metadata fix
 
-Din lokale test viste, at tarballen stadig ikke indeholder metadata:
-
-```powershell
-tar -tzf $tarball.FullName | Select-String metadata
-```
-
-gav intet output.
-
-Denne patch gør metadata-injektionen mere robust:
-
-- finder `.tar.gz` og `.xml` i build-output
-- pakker tarballen ud
-- kopierer XML ind som:
-  - `metadata.xml`
-  - `<pakkenavn>/metadata.xml`
-- pakker tarballen igen
-- verificerer at metadata nu findes i tarballen
-
-Den uploader også artifacten med et tydeligere navn:
+v0.9.5 fejlede i GitHub Actions med:
 
 ```text
-angelgrib-plugin-manager-tarball
+tar (child): Cannot connect to D: resolve failed
 ```
+
+Årsagen er, at workflowet fik MSYS `tar` i PATH, og MSYS tar fortolker Windows-stier som `D:\...` forkert.
+
+Denne patch erstatter hele metadata-injektionen med ren Python:
+
+- ingen `tar -xzf`
+- ingen `tar -czf`
+- ingen `tar -tzf`
+- Python `tarfile` håndterer Windows-stier korrekt
 
 ## Brug
 
@@ -30,10 +21,18 @@ angelgrib-plugin-manager-tarball
 cd C:\Users\Administrator\Downloads\angelgrib_pi
 git checkout template-migration
 
-.\scripts\patch-dual-metadata-tarball-v095.ps1
+.\scripts\patch-python-tar-metadata-v096.ps1
 
 git status
 git add .
-git commit -m "Add metadata.xml inside plugin tarball"
+git commit -m "Use Python to inject metadata into plugin tarball"
 git push
 ```
+
+Efter build:
+1. Download artifact
+2. Test:
+   ```powershell
+   tar -tzf .\angelgrib_pi-*.tar.gz | Select-String metadata
+   ```
+3. Importér `.tar.gz` i OpenCPN
