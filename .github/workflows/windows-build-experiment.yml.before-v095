@@ -182,56 +182,6 @@ jobs:
           set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\msys64\usr\bin
           cmake --build build --target package --config Release --verbose
 
-      - name: Inject metadata.xml into plugin tarball
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          $tarballs = Get-ChildItem -Path build -Recurse -Filter "*.tar.gz"
-          $xmlFiles = Get-ChildItem -Path build -Recurse -Filter "*.xml" |
-            Where-Object { $_.Name -like "angelgrib_pi-*.xml" -or $_.Name -like "*angelgrib*.xml" }
-
-          if ($tarballs.Count -eq 0) {
-            throw "No .tar.gz plugin tarball found under build."
-          }
-
-          if ($xmlFiles.Count -eq 0) {
-            throw "No AngelGRIB metadata XML found under build."
-          }
-
-          $xml = $xmlFiles | Select-Object -First 1
-          Write-Host "Using metadata XML: $($xml.FullName)"
-
-          foreach ($tarball in $tarballs) {
-            Write-Host "Patching tarball: $($tarball.FullName)"
-
-            $work = Join-Path $env:RUNNER_TEMP ("angelgrib-tarball-" + [guid]::NewGuid().ToString())
-            $extract = Join-Path $work "extract"
-            New-Item -ItemType Directory -Force $extract | Out-Null
-
-            tar -xzf "$($tarball.FullName)" -C "$extract"
-
-            Copy-Item "$($xml.FullName)" (Join-Path $extract "metadata.xml") -Force
-
-            $topDirs = Get-ChildItem $extract -Directory
-            foreach ($dir in $topDirs) {
-              Copy-Item "$($xml.FullName)" (Join-Path $dir.FullName "metadata.xml") -Force
-              Write-Host "Injected package metadata: $($dir.FullName)\metadata.xml"
-            }
-
-            Remove-Item "$($tarball.FullName)" -Force
-
-            Push-Location $extract
-            try {
-              tar -czf "$($tarball.FullName)" *
-            } finally {
-              Pop-Location
-            }
-
-            Write-Host "Verifying metadata in tarball:"
-            tar -tzf "$($tarball.FullName)" | Select-String -Pattern "metadata.xml" -SimpleMatch
-          }
-
       - name: List build output
         if: always()
         shell: pwsh
@@ -242,11 +192,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: angelgrib-plugin-manager-tarball
+          name: angelgrib-windows-build-output
           path: |
             build/**/*.dll
             build/**/*.tar.gz
             build/**/*.exe
             build/**/*.xml
             build/**/*.log
-

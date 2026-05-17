@@ -1,23 +1,28 @@
-# AngelGRIB_pi v0.9.4 — Tarball metadata fix
+# AngelGRIB_pi v0.9.5 — dual metadata tarball fix
 
-OpenCPN accepterer ikke den byggede `.tar.gz`, fordi tarballen mangler den påkrævede metadatafil inde i selve arkivet.
+Din lokale test viste, at tarballen stadig ikke indeholder metadata:
 
-Fejlen i OpenCPN:
-
-```text
-Error, import plugin tarball does not contain required metadata.
+```powershell
+tar -tzf $tarball.FullName | Select-String metadata
 ```
 
-Artifacten indeholder allerede en `.xml` ved siden af `.tar.gz`, men OpenCPN Import Plugin Tarball kræver metadata inde i tarballen.
+gav intet output.
 
-Denne patch tilføjer et GitHub Actions step efter `Build package`, som:
+Denne patch gør metadata-injektionen mere robust:
 
-1. Finder `build/*.tar.gz`
-2. Finder den byggede `build/*.xml`
-3. Pakker tarballen ud
-4. Kopierer XML-filen ind som `metadata.xml`
-5. Pakker tarballen igen
-6. Uploader den rettede tarball som artifact
+- finder `.tar.gz` og `.xml` i build-output
+- pakker tarballen ud
+- kopierer XML ind som:
+  - `metadata.xml`
+  - `<pakkenavn>/metadata.xml`
+- pakker tarballen igen
+- verificerer at metadata nu findes i tarballen
+
+Den uploader også artifacten med et tydeligere navn:
+
+```text
+angelgrib-plugin-manager-tarball
+```
 
 ## Brug
 
@@ -25,10 +30,10 @@ Denne patch tilføjer et GitHub Actions step efter `Build package`, som:
 cd C:\Users\Administrator\Downloads\angelgrib_pi
 git checkout template-migration
 
-.\scripts\patch-tarball-metadata-v094.ps1
+.\scripts\patch-dual-metadata-tarball-v095.ps1
 
 git status
 git add .
-git commit -m "Include metadata.xml inside plugin tarball"
+git commit -m "Add metadata.xml inside plugin tarball"
 git push
 ```
