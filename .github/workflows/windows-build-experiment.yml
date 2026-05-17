@@ -1,0 +1,100 @@
+name: AngelGRIB Windows build experiment
+
+on:
+  push:
+    branches:
+      - template-migration
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    name: Windows MSVC build experiment
+    runs-on: windows-2022
+
+    env:
+      WXWIN: C:\wxWidgets-3.2.1
+      WX_VER: 32
+      wxWidgets_ROOT_DIR: C:\wxWidgets-3.2.1
+      wxWidgets_LIB_DIR: C:\wxWidgets-3.2.1\lib\vc_dll
+      OCPN_TARGET: MSVC
+
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Show repository state
+        shell: pwsh
+        run: |
+          git status
+          Get-ChildItem
+          Get-ChildItem .github\workflows
+
+      - name: Install helper tools
+        shell: pwsh
+        run: |
+          choco install wget 7zip nsis poedit -y --no-progress
+
+      - name: Download wxWidgets 3.2.1 MSVC dev files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force $env:WXWIN | Out-Null
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxMSW-3.2.1_vc14x_Dev.7z" `
+            -OutFile "wxMSW-3.2.1_vc14x_Dev.7z"
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1-headers.7z" `
+            -OutFile "wxWidgets-3.2.1-headers.7z"
+
+          7z x "wxMSW-3.2.1_vc14x_Dev.7z" "-o$env:WXWIN" -y
+          7z x "wxWidgets-3.2.1-headers.7z" "-o$env:WXWIN" -y
+
+          Get-ChildItem $env:WXWIN
+
+      - name: Download OpenCPN Windows build support
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib" `
+            -OutFile "opencpn.lib"
+
+          Invoke-WebRequest `
+            -Uri "https://download.opencpn.org/s/oibxM3kzfzKcSc3/download" `
+            -OutFile "OpenCPN_buildwin-4.99a.7z"
+
+          7z x -y "OpenCPN_buildwin-4.99a.7z" "-obuildwin"
+
+      - name: Configure CMake
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\Program Files (x86)\Poedit\GettextTools\bin
+          cmake -S . -B build -A Win32
+
+      - name: Build package
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars32.bat"
+          set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\Program Files (x86)\Poedit\GettextTools\bin
+          cmake --build build --target package --config Release --verbose
+
+      - name: List build output
+        if: always()
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse build | Select-Object FullName, Length | Out-String -Width 240
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: angelgrib-windows-build-output
+          path: |
+            build/**/*.dll
+            build/**/*.tar.gz
+            build/**/*.exe
+            build/**/*.xml
+            build/**/*.log
