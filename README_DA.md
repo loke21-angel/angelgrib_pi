@@ -1,8 +1,20 @@
-# AngelGRIB_pi v0.9.7 — full workflow Python metadata fix
+# AngelGRIB_pi v0.9.8 — Workflow YAML fix
 
-Denne patch overskriver hele `.github/workflows/windows-build-experiment.yml`.
+GitHub afviser workflowet med:
 
-Grunden er, at GitHub Actions stadig kørte den gamle v0.9.5-blok med `tar`, selv efter Python-fixet. Denne version fjerner al `tar` CLI fra metadata-step'et og bruger kun Python `tarfile`.
+```text
+Invalid workflow file: .github/workflows/windows-build-experiment.yml#L194
+You have an error in your yaml syntax on line 194
+```
+
+Årsagen er sandsynligvis den store inline Python/heredoc-blok i workflow YAML-filen.
+
+Denne patch gør workflowet simplere:
+
+- Python-koden flyttes til `scripts/inject_metadata_into_tarball.py`
+- workflowet kalder scriptet med almindelige argumenter
+- ingen inline Python heredoc i YAML
+- ingen `tar` CLI i metadata-step'et
 
 ## Brug
 
@@ -10,12 +22,10 @@ Grunden er, at GitHub Actions stadig kørte den gamle v0.9.5-blok med `tar`, sel
 cd C:\Users\Administrator\Downloads\angelgrib_pi
 git checkout template-migration
 
-Copy-Item .\angelgrib_v097\angelgrib_pi_v0.9.7_full_workflow_python_metadata\.github\workflows\windows-build-experiment.yml `
-  .\.github\workflows\windows-build-experiment.yml `
-  -Force
+.\scripts\apply-v098.ps1
 
 git status
-git add .github/workflows/windows-build-experiment.yml
-git commit -m "Replace workflow with Python metadata tarball handling"
+git add .
+git commit -m "Fix workflow YAML by moving metadata injection to script"
 git push
 ```
