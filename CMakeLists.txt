@@ -61,17 +61,13 @@ endif (COMMAND cmake_policy)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # define plugin name, owner and versions
-set(VERBOSE_NAME "AngelGRIB")
-set(COMMON_NAME "AngelGRIB")
-set(TITLE_NAME "angelgrib")
+set(VERBOSE_NAME "Angel CPN Weather")
+set(COMMON_NAME "Angel CPN Weather")
+set(TITLE_NAME "angel_cpn_weather")
 set(PACKAGE_CONTACT "Rasmus Jessen")
-set(PACKAGE "angelgrib")
-set(SHORT_DESCRIPTION
-    "Plugin to test examples of the ODAPI and JSON interface for ODRAW"
-)
-set(LONG_DESCRIPTION
-    "testplugin Plugin is used to test out the ODraw API and demonstrate how to use it successfully from another plugin"
-)
+set(PACKAGE "angel_cpn_weather")
+set(SHORT_DESCRIPTION "Download NOAA GFS weather GRIB files and open them in OpenCPN GRIB plugin" )
+set(LONG_DESCRIPTION "Angel CPN Weather downloads a small NOAA GFS GRIB2 file and opens it in OpenCPN GRIB Weather plugin." )
 
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "1")
@@ -100,9 +96,9 @@ set(BETA "beta") # Standard Repos
 set(ALPHA "alpha") # Standard Repos
 
 # Set if  Cloudsmith Base Repository name does not match your Git Repository
-# name. set(CLOUDSMITH_BASE_REPOSITORY "${GIT_REPOSITORY_NAME}")
-# set(CLOUDSMITH_BASE_REPOSITORY "opencpn-plugins")  #Ricks's customization
-set(CLOUDSMITH_BASE_REPOSITORY "angelgrib") # without the pi
+# name. set(CLOUDSMITH_BASE_REPOSITORY "angel_cpn_weather")
+# set(CLOUDSMITH_BASE_REPOSITORY "angel_cpn_weather")  #Ricks's customization
+set(CLOUDSMITH_BASE_REPOSITORY "angel_cpn_weather") # without the pi
 
 # Set the following to use OpenCPN cloudsmith repositories instead of own
 # repositories
@@ -178,15 +174,9 @@ add_definitions(-DUSE_S57)
 
 # ---- Section Below - Add your project SET(SRCS and SET(HDRS  etc..
 
-set(SRCS
-  src/angelgrib_pi.cpp
-  src/grib_url_builder.cpp
-)
+set(SRCS src/angel_cpn_weather_pi.cpp src/weather_url_builder.cpp )
 
-set(HDRS
-  include/angelgrib_pi.h
-  include/grib_url_builder.h
-)
+set(HDRS include/angel_cpn_weather_pi.h include/weather_url_builder.h )
 
 add_definitions(-DPLUGIN_USE_SVG)
 
@@ -346,4 +336,13 @@ get_property(
 foreach (dir ${dirs})
   message(STATUS "${CMLOC}dir='${dir}'")
 endforeach ()
+
+
+
+
+
+
+
+
+
 

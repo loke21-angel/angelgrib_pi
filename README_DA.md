@@ -1,31 +1,45 @@
-# AngelGRIB_pi v0.9.8 — Workflow YAML fix
+# AngelGRIB_pi v0.9.9 — Release URL metadata fix
 
-GitHub afviser workflowet med:
+OpenCPN finder nu metadata, men metadataen indeholder stadig template/Cloudsmith-placeholder:
 
-```text
-Invalid workflow file: .github/workflows/windows-build-experiment.yml#L194
-You have an error in your yaml syntax on line 194
+```xml
+<tarball-url>
+  https://dl.cloudsmith.io/public/--pkg_repo--/raw/names/--name--/versions/--version--/--filename--
+</tarball-url>
 ```
 
-Årsagen er sandsynligvis den store inline Python/heredoc-blok i workflow YAML-filen.
+Det giver 404, fordi URL'en ikke findes.
 
-Denne patch gør workflowet simplere:
+Denne pakke indeholder et lokalt script, som patcher metadata inde i `.tar.gz`, så `tarball-url` peger på en GitHub Release asset.
 
-- Python-koden flyttes til `scripts/inject_metadata_into_tarball.py`
-- workflowet kalder scriptet med almindelige argumenter
-- ingen inline Python heredoc i YAML
-- ingen `tar` CLI i metadata-step'et
+## Standard release URL
+
+For tag `v0.1.0-beta` bliver URL'en:
+
+```text
+https://github.com/loke21-angel/angelgrib_pi/releases/download/v0.1.0-beta/<tarball-filnavn>
+```
 
 ## Brug
 
+1. Kør scriptet på den udpakkede artifact-mappe:
+
 ```powershell
-cd C:\Users\Administrator\Downloads\angelgrib_pi
-git checkout template-migration
-
-.\scripts\apply-v098.ps1
-
-git status
-git add .
-git commit -m "Fix workflow YAML by moving metadata injection to script"
-git push
+C:\Users\Administrator\Downloads\angelgrib_pi\scripts\fix-local-tarball-release-url.ps1 `
+  -Directory C:\Users\Administrator\Desktop\plugin `
+  -Tag v0.1.0-beta
 ```
+
+2. Scriptet laver en ny tarball:
+
+```text
+*-release-url.tar.gz
+```
+
+3. Opret en GitHub Release med tag `v0.1.0-beta`.
+
+4. Upload den nye `*-release-url.tar.gz` som release asset.
+
+5. Importér den nye `*-release-url.tar.gz` i OpenCPN.
+
+Hvis OpenCPN forsøger at downloade efter import, henter den nu tarballen fra GitHub Release i stedet for Cloudsmith-placeholderen.
