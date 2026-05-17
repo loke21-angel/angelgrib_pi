@@ -1,4 +1,4 @@
-﻿name: AngelGRIB Windows build experiment
+name: AngelGRIB Windows build experiment
 
 on:
   push:
@@ -29,13 +29,6 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-
-          Write-Host "Initial opencpn-libs state:"
-          if (Test-Path "opencpn-libs") {
-            Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
-          } else {
-            Write-Host "opencpn-libs does not exist yet."
-          }
 
           Remove-Item "opencpn-libs" -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -83,19 +76,12 @@ jobs:
 
             Write-Host "Source did not contain all required paths:"
             $missing | ForEach-Object { Write-Host "  missing: $_" }
-
-            Write-Host "Top-level opencpn-libs contents:"
-            Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
           }
 
           if (-not $ok) {
-            Write-Host "Final repository root:"
-            Get-ChildItem -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
+            Get-ChildItem "opencpn-libs" -Force -ErrorAction SilentlyContinue
             throw "Could not vendor required OpenCPN libs."
           }
-
-          Write-Host "Final opencpn-libs contents:"
-          Get-ChildItem "opencpn-libs" -Force | Select-Object Mode, Length, Name | Format-Table | Out-String | Write-Host
 
       - name: Show repository state
         shell: pwsh
@@ -182,7 +168,7 @@ jobs:
           set PATH=%PATH%;%WXWIN%;%wxWidgets_LIB_DIR%;C:\msys64\usr\bin
           cmake --build build --target package --config Release --verbose
 
-      - name: Inject metadata.xml into plugin tarball
+      - name: Inject metadata.xml into plugin tarball using Python
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -202,35 +188,105 @@ jobs:
           $xml = $xmlFiles | Select-Object -First 1
           Write-Host "Using metadata XML: $($xml.FullName)"
 
-          foreach ($tarball in $tarballs) {
-            Write-Host "Patching tarball: $($tarball.FullName)"
+          $script = Join-Path $env:RUNNER_TEMP "inject_metadata_into_tarball.py"
 
-            $work = Join-Path $env:RUNNER_TEMP ("angelgrib-tarball-" + [guid]::NewGuid().ToString())
-            $extract = Join-Path $work "extract"
-            New-Item -ItemType Directory -Force $extract | Out-Null
+          @'
+import os
+import sys
+import tarfile
+import shutil
+import tempfile
 
-            tar -xzf "$($tarball.FullName)" -C "$extract"
+metadata_xml = sys.argv[1]
+tarballs = sys.argv[2:]
 
-            Copy-Item "$($xml.FullName)" (Join-Path $extract "metadata.xml") -Force
+if not os.path.exists(metadata_xml):
+    raise SystemExit(f"metadata xml does not exist: {metadata_xml}")
 
-            $topDirs = Get-ChildItem $extract -Directory
-            foreach ($dir in $topDirs) {
-              Copy-Item "$($xml.FullName)" (Join-Path $dir.FullName "metadata.xml") -Force
-              Write-Host "Injected package metadata: $($dir.FullName)\metadata.xml"
-            }
+for tarball in tarballs:
+    if not os.path.exists(tarball):
+        raise SystemExit(f"tarball does not exist: {tarball}")
 
-            Remove-Item "$($tarball.FullName)" -Force
+    print(f"Patching tarball: {tarball}")
 
-            Push-Location $extract
-            try {
-              tar -czf "$($tarball.FullName)" *
-            } finally {
-              Pop-Location
-            }
+    with tempfile.TemporaryDirectory(prefix="angelgrib_tarball_") as tmp:
+        extract_dir = os.path.join(tmp, "extract")
+        os.makedirs(extract_dir, exist_ok=True)
 
-            Write-Host "Verifying metadata in tarball:"
-            tar -tzf "$($tarball.FullName)" | Select-String -Pattern "metadata.xml" -SimpleMatch
-          }
+        with tarfile.open(tarball, "r:gz") as tar:
+            tar.extractall(extract_dir)
+
+        shutil.copyfile(metadata_xml, os.path.join(extract_dir, "metadata.xml"))
+
+        top_dirs = [
+            os.path.join(extract_dir, name)
+            for name in os.listdir(extract_dir)
+            if os.path.isdir(os.path.join(extract_dir, name))
+        ]
+
+        for top_dir in top_dirs:
+            shutil.copyfile(metadata_xml, os.path.join(top_dir, "metadata.xml"))
+
+        tmp_tarball = tarball + ".tmp"
+
+        with tarfile.open(tmp_tarball, "w:gz") as out:
+            for root, dirs, files in os.walk(extract_dir):
+                dirs.sort()
+                files.sort()
+                for filename in files:
+                    path = os.path.join(root, filename)
+                    arcname = os.path.relpath(path, extract_dir).replace(os.sep, "/")
+                    out.add(path, arcname=arcname)
+
+        os.replace(tmp_tarball, tarball)
+
+    print("Verifying metadata entries:")
+    with tarfile.open(tarball, "r:gz") as tar:
+        names = tar.getnames()
+        metadata_names = [name for name in names if name.endswith("metadata.xml")]
+        for name in metadata_names:
+            print(f"  {name}")
+
+        if not metadata_names:
+            raise SystemExit(f"No metadata.xml found after patching {tarball}")
+
+print("Metadata injection complete.")
+'@ | Set-Content -Path $script -Encoding UTF8
+
+          $tarballArgs = @($xml.FullName) + @($tarballs | ForEach-Object { $_.FullName })
+          python $script @tarballArgs
+
+      - name: Verify tarball metadata using Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $script = Join-Path $env:RUNNER_TEMP "verify_tarballs.py"
+
+          @'
+import sys
+import tarfile
+
+ok = True
+
+for tarball in sys.argv[1:]:
+    print(f"Checking {tarball}")
+    with tarfile.open(tarball, "r:gz") as tar:
+        names = tar.getnames()
+        metadata = [name for name in names if name.endswith("metadata.xml")]
+        if not metadata:
+            print("  ERROR: metadata.xml not found")
+            ok = False
+        else:
+            for name in metadata:
+                print(f"  {name}")
+
+if not ok:
+    raise SystemExit(1)
+'@ | Set-Content -Path $script -Encoding UTF8
+
+          $tarballs = Get-ChildItem -Path build -Recurse -Filter "*.tar.gz"
+          python $script @($tarballs | ForEach-Object { $_.FullName })
 
       - name: List build output
         if: always()
@@ -249,4 +305,3 @@ jobs:
             build/**/*.exe
             build/**/*.xml
             build/**/*.log
-

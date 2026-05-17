@@ -1,19 +1,8 @@
-# AngelGRIB_pi v0.9.6 — Python tar metadata fix
+# AngelGRIB_pi v0.9.7 — full workflow Python metadata fix
 
-v0.9.5 fejlede i GitHub Actions med:
+Denne patch overskriver hele `.github/workflows/windows-build-experiment.yml`.
 
-```text
-tar (child): Cannot connect to D: resolve failed
-```
-
-Årsagen er, at workflowet fik MSYS `tar` i PATH, og MSYS tar fortolker Windows-stier som `D:\...` forkert.
-
-Denne patch erstatter hele metadata-injektionen med ren Python:
-
-- ingen `tar -xzf`
-- ingen `tar -czf`
-- ingen `tar -tzf`
-- Python `tarfile` håndterer Windows-stier korrekt
+Grunden er, at GitHub Actions stadig kørte den gamle v0.9.5-blok med `tar`, selv efter Python-fixet. Denne version fjerner al `tar` CLI fra metadata-step'et og bruger kun Python `tarfile`.
 
 ## Brug
 
@@ -21,18 +10,12 @@ Denne patch erstatter hele metadata-injektionen med ren Python:
 cd C:\Users\Administrator\Downloads\angelgrib_pi
 git checkout template-migration
 
-.\scripts\patch-python-tar-metadata-v096.ps1
+Copy-Item .\angelgrib_v097\angelgrib_pi_v0.9.7_full_workflow_python_metadata\.github\workflows\windows-build-experiment.yml `
+  .\.github\workflows\windows-build-experiment.yml `
+  -Force
 
 git status
-git add .
-git commit -m "Use Python to inject metadata into plugin tarball"
+git add .github/workflows/windows-build-experiment.yml
+git commit -m "Replace workflow with Python metadata tarball handling"
 git push
 ```
-
-Efter build:
-1. Download artifact
-2. Test:
-   ```powershell
-   tar -tzf .\angelgrib_pi-*.tar.gz | Select-String metadata
-   ```
-3. Importér `.tar.gz` i OpenCPN
